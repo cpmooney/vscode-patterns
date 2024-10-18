@@ -12,12 +12,31 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [{
+      "command": "enespanol.in-context-menu",
+      "title": "En Espanol"
+    }],
     "chatParticipants": [
       {
         "name": "enespanol",
         "id": "en-epsanol-chat-particpant"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorFocus",
+          "command": "enespanol.in-context-menu",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "enespanol.in-context-menu",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run compile",

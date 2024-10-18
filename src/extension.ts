@@ -11,7 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const chatModels = await vscode.lm.selectChatModels({ family: "gpt-4-turbo" });
 
-		const textInEspanol = await askCopilot(`Translate the following into spanish: ${getTextFromActiveFile()}`, chatModels[0], token);
+		const textInEspanol = await askCopilot(`Translate the following file(s) into spanish: ${getTextFromActiveFile()}`, chatModels[0], token);
 
 		const filenameInEspanol = await askCopilot(`Translate the following into spanish, preserving the extension: ${nameOfCurrentlyOpenFile()}`, chatModels[0], token);
 
@@ -21,6 +21,34 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	registerCommand('write-to-file', writeTextToFile);
+	registerCommand('enespanol.in-context-menu', async (uri: vscode.Uri) => {
+		const fileContents = await getContentsFromFiles(uri);
+		vscode.commands.executeCommand('vscode.chat.sendMessage', {
+            participantId: 'en-epsanol-chat-particpant'
+//			context: { fileContents }
+        });
+	});
+}
+
+async function getFilenamesInDirectory(uri: vscode.Uri): Promise<vscode.Uri[]> {
+	const stat = await vscode.workspace.fs.stat(uri);
+	if (stat.type !== vscode.FileType.Directory) {
+		return [uri];
+	}
+    const files = await vscode.workspace.fs.readDirectory(uri);
+    const result: vscode.Uri[] = [];
+
+    for (const [name, type] of files) {
+        const fileUri = vscode.Uri.joinPath(uri, name);
+        if (type === vscode.FileType.File) {
+            result.push(fileUri);
+        } else if (type === vscode.FileType.Directory) {
+            const subFiles = await getFilenamesInDirectory(fileUri);
+            result.push(...subFiles);
+        }
+    }
+
+    return result;
 }
 
 async function askCopilot(message: string, chatModel: vscode.LanguageModelChat, token: vscode.CancellationToken): Promise<string> {
@@ -101,6 +129,23 @@ async function getTextFromResponse(response: vscode.LanguageModelChatResponse): 
 		data += token;
 	}
 	return data;
+}
+
+interface FileContent {
+	fileName: string;
+	contents: string;
+}
+
+async function getContentsFromFiles(uri: vscode.Uri): Promise<FileContent[]> {
+	const stat = await vscode.workspace.fs.stat(uri);
+	if (stat.type === vscode.FileType.Directory) {
+		const files = await getFilenamesInDirectory(uri);
+		const fileContents = await Promise.all(files.map((file) => getContentsFromFiles(file)));
+		return fileContents.flat();
+	} else {
+		const contents = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
+		return [{ fileName: uri.fsPath, contents }];
+	}
 }
 
 export function deactivate() {}

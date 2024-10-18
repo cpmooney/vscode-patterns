@@ -1,0 +1,7 @@
+clock
+table
+watch
+pants
+chair
+sink
+dishes
