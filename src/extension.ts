@@ -6,9 +6,16 @@ export function activate(context: vscode.ExtensionContext) {
 		context.subscriptions.push(vscode.commands.registerCommand(command, callback));
 	};
 
+	registerCommand('code-from-patterns.in-context-menu', async (uri: vscode.Uri) => {
+		showInformationMessage(uri.path);
+		const fileContentInfo = await getFileContentInfoFromUri(uri);
+		vscode.commands.executeCommand('workbench.action.chat.open', 
+			`@code-from-patterns ${JSON.stringify(fileContentInfo)}`
+        );
+	});
+
 	vscode.chat.createChatParticipant("code-from-patterns-chat-participant-chat-particpant", async (request, _context, response, token) => {
 		response.progress('Processing . . .');
-
 		const chatModels = await vscode.lm.selectChatModels({ family: "gpt-4-turbo" });
 
 		const { baseDirectory, fileContents } = JSON.parse(request.prompt) as FileContentInfo;
@@ -17,18 +24,18 @@ export function activate(context: vscode.ExtensionContext) {
 		'Convert contents of files to spanish as well as file names without changing directory or extension.' +
 		'Do not tell me how to do it -- do it for me.', chatModels[0], token);
 
-		response.markdown("Esta hecho!");
+		response.markdown("Done!");
 
-		response.button({ title: 'Escribir en el archivo', command: 'write-to-file', arguments: [espanolResponse, baseDirectory] });
+		response.button({ title: 'Write to Files', command: 'write-to-file', arguments: [espanolResponse, baseDirectory] });
 	});
 
 	registerCommand('write-to-file', writeResponseToFiles);
-	registerCommand('code-from-patterns.in-context-menu', async (uri: vscode.Uri) => {
-		const fileContentInfo = await getFileContentInfoFromUri(uri);
-		vscode.commands.executeCommand('workbench.action.chat.open', 
-			`@code-from-patterns ${JSON.stringify(fileContentInfo)}`
-        );
-	});
+}
+
+const patternDirectoryLocation = "file:///Users/username/Documents/CodeFromPatterns/src/patterns/sdr-entity";
+
+async function getFileContentInfoForPattern(): Promise<FileContentInfo> {
+	return await getFileContentInfoFromUri(patternDirectoryLocation);
 }
 
 async function writeResponseToFiles(espanolResponse: string, baseDirectory: string) {
@@ -60,6 +67,10 @@ async function getTextFromResponse(response: vscode.LanguageModelChatResponse): 
 		data += token;
 	}
 	return data;
+}
+
+function showInformationMessage(message: string) {
+	vscode.window.showInformationMessage(message);
 }
 
 export function deactivate() {}
