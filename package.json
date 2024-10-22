@@ -1,6 +1,6 @@
 {
-  "name": "enespanol",
-  "displayName": "En Espanol",
+  "name": "code-from-patterns",
+  "displayName": "Generate Code from Patterns",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -13,26 +13,26 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [{
-      "command": "enespanol.in-context-menu",
-      "title": "En Espanol"
+      "command": "code-from-patterns.in-context-menu",
+      "title": "Code from Patterns"
     }],
     "chatParticipants": [
       {
-        "name": "enespanol",
-        "id": "en-epsanol-chat-particpant"
+        "name": "code-from-patterns",
+        "id": "code-from-patterns-chat-participant-chat-particpant"
       }
     ],
     "menus": {
       "editor/context": [
         {
           "when": "editorFocus",
-          "command": "enespanol.in-context-menu",
+          "command": "code-from-patterns.in-context-menu",
           "group": "navigation"
         }
       ],
       "explorer/context": [
         {
-          "command": "enespanol.in-context-menu",
+          "command": "code-from-patterns.in-context-menu",
           "group": "navigation"
         }
       ]

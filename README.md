@@ -11,7 +11,7 @@ This extension takes a file that's currently open and translates the contents in
 ## Usage
 
 1. Open a file in VS Code.
-2. Use the Copilot prompt `@enespanol` to translate the contents to Spanish.
+2. Use the Copilot prompt `@code-from-patterns` to translate the contents to Spanish.
 3. Click the "Write to file" button.
 4. The new file with the Spanish contents will be created and opened in VS Code.
 
