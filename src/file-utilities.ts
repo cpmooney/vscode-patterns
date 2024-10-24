@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
+const maxNumberOfFiles = 100;
+
 export interface FileContent {
 	fileName: string;
 	contents: string;
@@ -103,6 +105,11 @@ async function getContentsFromFiles(uri: vscode.Uri): Promise<FileContent[]> {
 	const stat = await vscode.workspace.fs.stat(uri);
 	if (stat.type === vscode.FileType.Directory) {
 		const files = await getFilenamesInDirectory(uri);
+		if (files.length > maxNumberOfFiles) {
+			const message = `Directory ${uri.fsPath} has ${files.length} files but the limit is ${maxNumberOfFiles}.`;
+			vscode.window.showErrorMessage(message);
+			throw new Error('Too many files');
+		}
 		const fileContents = await Promise.all(files.map((file) => getContentsFromFiles(file)));
 		return fileContents.flat();
 	} else {
