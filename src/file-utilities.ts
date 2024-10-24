@@ -1,11 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-export interface FileContentInfo {
-	baseDirectory?: string;
-	fileContents: FileContent[];
-}
-
 export interface FileContent {
 	fileName: string;
 	contents: string;
@@ -15,13 +10,21 @@ export async function writeFileContentsToFiles(fileContents: FileContent[], base
 	await Promise.all(fileContents.map(({ fileName, contents }) => writeTextToFile(fileName, contents, baseDirectory)));
 }
 
-export async function getFileContentInfoFromUri(uri: vscode.Uri): Promise<FileContentInfo> {
+export async function getFileContentInfoFromUri(uri: vscode.Uri): Promise<FileContent[]> {
 	const fileContents = await getContentsFromFiles(uri);
 	const baseDirectory = await isDirectory(uri) ? path.relative(getRootPath(), uri.fsPath) : undefined;
-	fileContents.forEach((fileContent) => {
-		fileContent.fileName = path.relative(baseDirectory ?? '', fileContent.fileName);
-	});
-	return { baseDirectory, fileContents };
+	return fileContents.map((fileContent) => ({
+		...fileContent,
+		fileName: path.relative(baseDirectory ?? '', fileContent.fileName)
+	}));
+}
+
+export function getRootPath(): string {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+	if (!workspaceFolders) {
+		throw new Error('No workspace folder is open.');
+	}
+	return workspaceFolders[0].uri.fsPath;
 }
 
 async function writeTextToFile(filename: string, text: string, baseDirectory: string): Promise<void> {
@@ -71,15 +74,7 @@ async function directoryExists(directoryPath: string): Promise<boolean> {
 	}
 }
 
-function getRootPath(): string {
-	const workspaceFolders = vscode.workspace.workspaceFolders;
-	if (!workspaceFolders) {
-		throw new Error('No workspace folder is open.');
-	}
-	return workspaceFolders[0].uri.fsPath;
-}
-
-async function isDirectory(uri: vscode.Uri): Promise<boolean> {
+export async function isDirectory(uri: vscode.Uri): Promise<boolean> {
 	const stat = await vscode.workspace.fs.stat(uri);
 	return stat.type === vscode.FileType.Directory;
 }
