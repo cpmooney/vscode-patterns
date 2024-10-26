@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 
 const maxNumberOfFiles = 100;
 
@@ -12,9 +13,9 @@ export async function writeFileContentsToFiles(fileContents: FileContent[], base
 	await Promise.all(fileContents.map(({ fileName, contents }) => writeTextToFile(fileName, contents, baseDirectory)));
 }
 
-export async function getFileContentInfoFromUri(uri: vscode.Uri): Promise<FileContent[]> {
-	const fileContents = await getContentsFromFiles(uri);
-	const baseDirectory = await isDirectory(uri) ? path.relative(getRootPath(), uri.fsPath) : undefined;
+export function getFileContentInfoFromUri(uri: string): FileContent[] {
+	const fileContents = getContentsFromFiles(uri);
+	const baseDirectory = isDirectory(uri) ? path.relative(getRootPath(), uri) : undefined;
 	return fileContents.map((fileContent) => ({
 		...fileContent,
 		fileName: path.relative(baseDirectory ?? '', fileContent.fileName)
@@ -76,24 +77,23 @@ async function directoryExists(directoryPath: string): Promise<boolean> {
 	}
 }
 
-export async function isDirectory(uri: vscode.Uri): Promise<boolean> {
-	const stat = await vscode.workspace.fs.stat(uri);
-	return stat.type === vscode.FileType.Directory;
+export function isDirectory(uri: string): boolean {
+	return fs.statSync(uri).isDirectory();
 }
 
-async function getFilenamesInDirectory(uri: vscode.Uri): Promise<vscode.Uri[]> {
-	if (!(await isDirectory(uri))) {
+function getFilenamesInDirectory(uri: string): string[] {
+	if (!(isDirectory(uri))) {
 		return [uri];
 	}
-    const files = await vscode.workspace.fs.readDirectory(uri);
-    const result: vscode.Uri[] = [];
+    const files: fs.Dirent[] = fs.readdirSync(uri, { withFileTypes: true });
+    const result: string[] = [];
 
-    for (const [name, type] of files) {
-        const fileUri = vscode.Uri.joinPath(uri, name);
-        if (type === vscode.FileType.File) {
+    for (const file of files) {
+        const fileUri = path.join(uri, file.name);
+        if (file.isFile()) {
             result.push(fileUri);
-        } else if (type === vscode.FileType.Directory) {
-            const subFiles = await getFilenamesInDirectory(fileUri);
+        } else if (file.isDirectory()) {
+            const subFiles = getFilenamesInDirectory(fileUri);
             result.push(...subFiles);
         }
     }
@@ -101,24 +101,29 @@ async function getFilenamesInDirectory(uri: vscode.Uri): Promise<vscode.Uri[]> {
     return result;
 }
 
-async function getContentsFromFiles(uri: vscode.Uri): Promise<FileContent[]> {
-	const stat = await vscode.workspace.fs.stat(uri);
-	if (stat.type === vscode.FileType.Directory) {
-		const files = await getFilenamesInDirectory(uri);
+function getContentsFromFiles(uri: string): FileContent[] {
+	const stat = fs.statSync(uri);
+	if (stat.isDirectory()) {
+		const files = getFilenamesInDirectory(uri);
+		if (files.length === 0) {
+			const message = `Directory ${uri} is empty.`;
+			vscode.window.showErrorMessage(message);
+			throw new Error('Empty directory');
+		}
 		if (files.length > maxNumberOfFiles) {
-			const message = `Directory ${uri.fsPath} has ${files.length} files but the limit is ${maxNumberOfFiles}.`;
+			const message = `Directory ${uri} has ${files.length} files but the limit is ${maxNumberOfFiles}.`;
 			vscode.window.showErrorMessage(message);
 			throw new Error('Too many files');
 		}
-		const fileContents = await Promise.all(files.map((file) => getContentsFromFiles(file)));
+		const fileContents = files.map((file) => getContentsFromFiles(file));
 		return fileContents.flat();
 	} else {
-		return [await getContentsFromSingleFile(uri)];
+		return [getContentsFromSingleFile(uri)];
 	}
 }
 
-async function getContentsFromSingleFile(uri: vscode.Uri): Promise<FileContent> {
-	const contents = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
-	const fileName = path.relative(getRootPath(), uri.fsPath);
+function getContentsFromSingleFile(uri: string): FileContent {
+	const contents = fs.readFileSync(uri, 'utf8');
+	const fileName = path.relative(getRootPath(), uri);
 	return { fileName, contents };
 }

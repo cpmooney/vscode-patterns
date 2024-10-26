@@ -16,13 +16,13 @@ export const conversationHandler = async (
 ) => {
   chatStream.progress("Processing . . .");
 
-  const fileContents = await getFileContentInfoForPattern();
+  const fileContents = getFileContentInfoForPattern();
 
   const copilotResponse = await askCopilot(
     prompt.adaptToUseCase(fileContents, userInput)
   );
 
-  chatStream.markdown("What fields are you looking for?");
+  chatStream.markdown("All done!");
 
   chatStream.button({
     title: "Write to Files",
@@ -35,16 +35,16 @@ export const registerCommands = (context: vscode.ExtensionContext) => {
   registerCommand(context, "write-to-file", writeResponseToFiles);
 };
 
-async function getFileContentInfoForPattern(): Promise<FileContent[]> {
-  const myPatternDirectoryLocation = await patternDirectoryLocation();
-  return await getFileContentInfoFromUri(myPatternDirectoryLocation);
+function getFileContentInfoForPattern(): FileContent[] {
+  const myPatternDirectoryLocation = patternDirectoryLocation();
+  return getFileContentInfoFromUri(myPatternDirectoryLocation);
 }
 
-async function patternDirectoryLocation(): Promise<vscode.Uri> {
+function patternDirectoryLocation(): string {
   const patternDirectory = process.env.CODE_PATTERN_DIRECTORY;
   if (patternDirectory) {
-    if (await isDirectory(vscode.Uri.parse(patternDirectory))) {
-      return vscode.Uri.parse(patternDirectory);
+    if (isDirectory(patternDirectory)) {
+      return patternDirectory;
     } else {
       vscode.window.showErrorMessage(
         `CODE_PATTERN_DIRECTORY is set to ${patternDirectory} but that is not a valid directory.`
