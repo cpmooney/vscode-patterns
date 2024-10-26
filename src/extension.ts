@@ -7,7 +7,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.chat.createChatParticipant("code-from-patterns-chat-participant-chat-particpant", async (request, _context, chatStream, token) => {
 		const askCopilot = await useAskCopilot(token);
-		conversationHandler(request.prompt, chatStream, askCopilot);
+		await conversationHandler(request.prompt, chatStream, askCopilot);
 	});
 }
 
