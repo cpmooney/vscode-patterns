@@ -26,7 +26,7 @@ export const conversationHandler = async (
   chatStream.button({
     title: "Write to Files",
     command: "write-to-file",
-    arguments: [copilotResponse, getRootPath()],
+    arguments: [copilotResponse, '/'],
   });
 };
 
@@ -38,27 +38,18 @@ async function writeResponseToFiles(
   chatResponse: string,
   baseDirectory: string
 ) {
-  const fileContents  = findCodeBlocksInString(chatResponse);
+  const fileContents  = findJsonInString<FileContent[]>(chatResponse);
   writeFileContentsToFiles(fileContents, baseDirectory);
-  openInEditorAndGiveFocus(baseDirectory);
+  await openInEditorAndGiveFocus(baseDirectory);
 }
 
-function findCodeBlocksInString(text: string): FileContent[] {
-  const regex = /\*\*(.*?)\*\*```(?:json|sql|java)?\n([\s\S]*?)\n```/g;
-  const matches: FileContent[] = [];
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    const fileName = match[1].trim();
-    const contents = match[2].trim();
-    matches.push({ fileName, contents });
-  }
-
-  return matches;
+function findJsonInString<T>(text: string): T {
+  const regex = /```(?:json)?\n([\s\S]*?)\n```/;
+	const jsonAsString = text.match(regex)?.[1] ?? '';
+	return JSON.parse(jsonAsString) as T;
 }
 
-function openInEditorAndGiveFocus(filePath: string) {
-  vscode.workspace.openTextDocument(filePath).then((doc) => {
-    vscode.window.showTextDocument(doc, {preview: false});
-  });
+async function openInEditorAndGiveFocus(filePath: string) {
+  const doc = await vscode.workspace.openTextDocument(filePath);
+  await vscode.window.showTextDocument(doc, { preview: false });
 }

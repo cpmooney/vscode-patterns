@@ -9,8 +9,8 @@ export interface FileContent {
 	contents: string;
 }
 
-export async function writeFileContentsToFiles(fileContents: FileContent[], baseDirectory: string): Promise<void> {
-	await Promise.all(fileContents.map(({ fileName, contents }) => writeTextToFile(fileName, contents, baseDirectory)));
+export function writeFileContentsToFiles(fileContents: FileContent[], baseDirectory: string): void {
+	fileContents.forEach((fileContent) => writeTextToFile(fileContent.fileName, fileContent.contents, baseDirectory));
 }
 
 export function getFileContentInfoFromUri(uri: string): FileContent[] {
@@ -30,10 +30,10 @@ export function getRootPath(): string {
 	return workspaceFolders[0].uri.fsPath;
 }
 
-async function writeTextToFile(filename: string, text: string, baseDirectory: string): Promise<void> {
+function writeTextToFile(filename: string, text: string, baseDirectory: string): void {
 	let absoluteFilename = '';
 	if (baseDirectory) {
-		const newDirectory = await createNewDirectory(baseDirectory);
+		const newDirectory = createNewDirectory(baseDirectory);
 		const rootDir = getRootPath();
 		absoluteFilename = path.join(rootDir, newDirectory, filename);
 	} else {
@@ -43,7 +43,7 @@ async function writeTextToFile(filename: string, text: string, baseDirectory: st
     const encodedText = new TextEncoder().encode(text);
 
     try {
-        await vscode.workspace.fs.writeFile(fileUri, encodedText);
+        vscode.workspace.fs.writeFile(fileUri, encodedText);
         vscode.window.showInformationMessage(`File ${filename} created successfully.`);
     } catch (error) {
 		if (error instanceof Error) {
@@ -54,27 +54,22 @@ async function writeTextToFile(filename: string, text: string, baseDirectory: st
     }
 }
 
-async function createNewDirectory(directoryName: string): Promise<string> {
+function createNewDirectory(directoryName: string): string {
 	let absoluteDirectoryPath = path.join(getRootPath(), directoryName);
 	let counter = 1;
 
-	while (await directoryExists(absoluteDirectoryPath)) {
+	while (directoryExists(absoluteDirectoryPath)) {
 		absoluteDirectoryPath = path.join(getRootPath(), `${directoryName}-${counter}`);
 		counter++;
 	}
 
-	await vscode.workspace.fs.createDirectory(vscode.Uri.file(absoluteDirectoryPath));
+	fs.mkdirSync(absoluteDirectoryPath);
 	vscode.window.showInformationMessage(`Directory ${path.basename(absoluteDirectoryPath)} created successfully.`);
 	return path.relative(getRootPath(), absoluteDirectoryPath);
 }
 
-async function directoryExists(directoryPath: string): Promise<boolean> {
-	try {
-		const stat = await vscode.workspace.fs.stat(vscode.Uri.file(directoryPath));
-		return stat.type === vscode.FileType.Directory;
-	} catch {
-		return false;
-	}
+function directoryExists(directoryPath: string): boolean {
+	return fs.existsSync(directoryPath);
 }
 
 export function isDirectory(uri: string): boolean {
