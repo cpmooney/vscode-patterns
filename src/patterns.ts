@@ -1,9 +1,10 @@
 import { FileContent, getFileContentInfoFromUri, isDirectory } from "./file-utilities";
 import * as vscode from "vscode";
+import * as path from "path";
 
-export function getFileContentInfoForPattern(): FileContent[] {
+export function getFileContentInfoForPattern(patternName: string): FileContent[] {
   const myPatternDirectoryLocation = patternDirectoryLocation();
-  return getFileContentInfoFromUri(myPatternDirectoryLocation);
+  return getFileContentInfoFromUri(path.join(myPatternDirectoryLocation, patternName));
 }
 
 function patternDirectoryLocation(): string {

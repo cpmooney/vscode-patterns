@@ -5,7 +5,7 @@ import {
   FileContent,
   writeFileContentsToFiles,
 } from "./file-utilities";
-import { getFileContentInfoForPattern } from "./pattern-helpers";
+import { getFileContentInfoForPattern } from "./patterns";
 
 export const conversationHandler = async (
   userInput: string,
@@ -14,7 +14,7 @@ export const conversationHandler = async (
 ) => {
   chatStream.progress("Processing . . .");
 
-  const fileContents = getFileContentInfoForPattern();
+  const fileContents = getFileContentInfoForPattern('sdr-entity');
 
   const copilotResponse = await askCopilot(
     prompt.adaptToUseCase(fileContents, userInput)
