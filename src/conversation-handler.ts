@@ -3,7 +3,6 @@ import * as prompt from "./prompts";
 import {AskCopilot, registerCommand} from "./extension-utilities";
 import {
   FileContent,
-  getRootPath,
   writeFileContentsToFiles,
 } from "./file-utilities";
 import { getFileContentInfoForPattern } from "./pattern-helpers";
@@ -38,9 +37,9 @@ async function writeResponseToFiles(
   chatResponse: string,
   baseDirectory: string
 ) {
-  const fileContents  = findJsonInString<FileContent[]>(chatResponse);
+  const fileContents: FileContent[]  = findJsonInString<FileContent[]>(chatResponse);
   writeFileContentsToFiles(fileContents, baseDirectory);
-  await openInEditorAndGiveFocus(baseDirectory);
+  await Promise.all(fileContents.map(async ({ fileName }) => { await openInEditorAndGiveFocus(fileName); }));
 }
 
 function findJsonInString<T>(text: string): T {

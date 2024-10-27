@@ -33,9 +33,8 @@ export function getRootPath(): string {
 function writeTextToFile(filename: string, text: string, baseDirectory: string): void {
 	let absoluteFilename = '';
 	if (baseDirectory) {
-		const newDirectory = createNewDirectory(baseDirectory);
-		const rootDir = getRootPath();
-		absoluteFilename = path.join(rootDir, newDirectory, filename);
+		guaranteeDirectory(baseDirectory);
+		absoluteFilename = path.join(getRootPath(), baseDirectory, filename);
 	} else {
 		absoluteFilename = path.join(getRootPath(), filename);
 	}
@@ -54,22 +53,11 @@ function writeTextToFile(filename: string, text: string, baseDirectory: string):
     }
 }
 
-function createNewDirectory(directoryName: string): string {
-	let absoluteDirectoryPath = path.join(getRootPath(), directoryName);
-	let counter = 1;
-
-	while (directoryExists(absoluteDirectoryPath)) {
-		absoluteDirectoryPath = path.join(getRootPath(), `${directoryName}-${counter}`);
-		counter++;
+function guaranteeDirectory(directoryName: string): void {
+	const absoluteDirectoryPath = path.join(getRootPath(), directoryName);
+	if (!fs.existsSync(absoluteDirectoryPath)) {
+		fs.mkdirSync(absoluteDirectoryPath);
 	}
-
-	fs.mkdirSync(absoluteDirectoryPath);
-	vscode.window.showInformationMessage(`Directory ${path.basename(absoluteDirectoryPath)} created successfully.`);
-	return path.relative(getRootPath(), absoluteDirectoryPath);
-}
-
-function directoryExists(directoryPath: string): boolean {
-	return fs.existsSync(directoryPath);
 }
 
 export function isDirectory(uri: string): boolean {
