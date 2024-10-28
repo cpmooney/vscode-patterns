@@ -1,5 +1,5 @@
 {
-  "name": "code-from-patterns",
+  "name": "smart-scaffold",
   "displayName": "Generate Code from Patterns",
   "description": "",
   "version": "0.0.1",
@@ -13,26 +13,26 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [{
-      "command": "code-from-patterns.in-context-menu",
+      "command": "smart-scaffold.in-context-menu",
       "title": "Code from Patterns"
     }],
     "chatParticipants": [
       {
-        "name": "code-from-patterns",
-        "id": "code-from-patterns-chat-participant-chat-particpant"
+        "name": "smart-scaffold",
+        "id": "smart-scaffold-chat-participant-chat-particpant"
       }
     ],
     "menus": {
       "editor/context": [
         {
           "when": "editorFocus",
-          "command": "code-from-patterns.in-context-menu",
+          "command": "smart-scaffold.in-context-menu",
           "group": "navigation"
         }
       ],
       "explorer/context": [
         {
-          "command": "code-from-patterns.in-context-menu",
+          "command": "smart-scaffold.in-context-menu",
           "group": "navigation"
         }
       ]
