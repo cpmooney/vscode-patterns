@@ -15,6 +15,6 @@ the power of AI.
 
 ## Usage
 
-1. Use the Copilot prompt `@code-from-patterns` and include a prompt describing the desired new use case.
+1. Use the Copilot prompt `@smart-scaffold` and include a prompt describing the desired new use case.
 2. Click the "Write to file" button.
 3. The new files will be added to appropriate directories in the directory you have currently open.
