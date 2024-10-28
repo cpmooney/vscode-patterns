@@ -1,33 +1,20 @@
-# En Espanol VS Code Extension
+# Code From Patterns VS Code Extension
 
-This extension takes a file that's currently open and translates the contents into Spanish. There is a button which says "Write to file". If you click that button, it will create a new file (with a Spanish name) with the new Spanish contents and opens it in VS Code.
+This extension allows you to scaffold code based on patterns you like and have stored in a directory modified using
+the power of AI.
 
-## Features
+## Setup
 
-- Translate the contents of the currently open file to Spanish.
-- Create a new file with the translated contents.
-- Automatically open the new file in VS Code.
-
-## Usage
-
-1. Open a file in VS Code.
-2. Use the Copilot prompt `@code-from-patterns` to translate the contents to Spanish.
-3. Click the "Write to file" button.
-4. The new file with the Spanish contents will be created and opened in VS Code.
+- Install VS Code and set up Github Copilot
+- Install the "Code From Patterns" extension
+- Set the environment variable `CODE_PATTERN_DIRECTORY` to the directory containing your patterns
 
 ## Requirements
 
-- Visual Studio Code
+- VS Code with Copilot
 
-## Installation
+## Usage
 
-1. Download and install the extension from the VS Code marketplace.
-2. Reload or restart VS Code.
-
-## Contributing
-
-Feel free to submit issues or pull requests if you find any bugs or have suggestions for improvements.
-
-## License
-
-This project is licensed under the MIT License.
+1. Use the Copilot prompt `@code-from-patterns` and include a prompt describing the desired new use case.
+2. Click the "Write to file" button.
+3. The new files will be added to appropriate directories in the directory you have currently open.

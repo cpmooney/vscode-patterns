@@ -1,35 +1,40 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 
-export interface FileContentInfo {
-	baseDirectory?: string;
-	fileContents: FileContent[];
-}
+const maxNumberOfFiles = 100;
 
 export interface FileContent {
 	fileName: string;
 	contents: string;
 }
 
-export async function writeFileContentsToFiles(fileContents: FileContent[], baseDirectory: string): Promise<void> {
-	await Promise.all(fileContents.map(({ fileName, contents }) => writeTextToFile(fileName, contents, baseDirectory)));
+export function writeFileContentsToFiles(fileContents: FileContent[], baseDirectory: string): void {
+	fileContents.forEach((fileContent) => writeTextToFile(fileContent.fileName, fileContent.contents, baseDirectory));
 }
 
-export async function getFileContentInfoFromUri(uri: vscode.Uri): Promise<FileContentInfo> {
-	const fileContents = await getContentsFromFiles(uri);
-	const baseDirectory = await isDirectory(uri) ? path.relative(getRootPath(), uri.fsPath) : undefined;
-	fileContents.forEach((fileContent) => {
-		fileContent.fileName = path.relative(baseDirectory ?? '', fileContent.fileName);
-	});
-	return { baseDirectory, fileContents };
+export function getFileContentInfoFromUri(uri: string): FileContent[] {
+	const fileContents = getContentsFromFiles(uri);
+	const baseDirectory = isDirectory(uri) ? path.relative(getRootPath(), uri) : undefined;
+	return fileContents.map((fileContent) => ({
+		...fileContent,
+		fileName: path.relative(baseDirectory ?? '', fileContent.fileName)
+	}));
 }
 
-async function writeTextToFile(filename: string, text: string, baseDirectory: string): Promise<void> {
+export function getRootPath(): string {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+	if (!workspaceFolders) {
+		throw new Error('No workspace folder is open.');
+	}
+	return workspaceFolders[0].uri.fsPath;
+}
+
+function writeTextToFile(filename: string, text: string, baseDirectory: string): void {
 	let absoluteFilename = '';
 	if (baseDirectory) {
-		const newDirectory = await createNewDirectory(baseDirectory);
-		const rootDir = getRootPath();
-		absoluteFilename = path.join(rootDir, newDirectory, filename);
+		guaranteeDirectory(baseDirectory);
+		absoluteFilename = path.join(getRootPath(), baseDirectory, filename);
 	} else {
 		absoluteFilename = path.join(getRootPath(), filename);
 	}
@@ -37,7 +42,7 @@ async function writeTextToFile(filename: string, text: string, baseDirectory: st
     const encodedText = new TextEncoder().encode(text);
 
     try {
-        await vscode.workspace.fs.writeFile(fileUri, encodedText);
+        vscode.workspace.fs.writeFile(fileUri, encodedText);
         vscode.window.showInformationMessage(`File ${filename} created successfully.`);
     } catch (error) {
 		if (error instanceof Error) {
@@ -48,55 +53,30 @@ async function writeTextToFile(filename: string, text: string, baseDirectory: st
     }
 }
 
-async function createNewDirectory(directoryName: string): Promise<string> {
-	let absoluteDirectoryPath = path.join(getRootPath(), directoryName);
-	let counter = 1;
-
-	while (await directoryExists(absoluteDirectoryPath)) {
-		absoluteDirectoryPath = path.join(getRootPath(), `${directoryName}-${counter}`);
-		counter++;
-	}
-
-	await vscode.workspace.fs.createDirectory(vscode.Uri.file(absoluteDirectoryPath));
-	vscode.window.showInformationMessage(`Directory ${path.basename(absoluteDirectoryPath)} created successfully.`);
-	return path.relative(getRootPath(), absoluteDirectoryPath);
-}
-
-async function directoryExists(directoryPath: string): Promise<boolean> {
-	try {
-		const stat = await vscode.workspace.fs.stat(vscode.Uri.file(directoryPath));
-		return stat.type === vscode.FileType.Directory;
-	} catch {
-		return false;
+function guaranteeDirectory(directoryName: string): void {
+	const absoluteDirectoryPath = path.join(getRootPath(), directoryName);
+	if (!fs.existsSync(absoluteDirectoryPath)) {
+		fs.mkdirSync(absoluteDirectoryPath);
 	}
 }
 
-function getRootPath(): string {
-	const workspaceFolders = vscode.workspace.workspaceFolders;
-	if (!workspaceFolders) {
-		throw new Error('No workspace folder is open.');
-	}
-	return workspaceFolders[0].uri.fsPath;
+export function isDirectory(uri: string): boolean {
+	return fs.statSync(uri).isDirectory();
 }
 
-async function isDirectory(uri: vscode.Uri): Promise<boolean> {
-	const stat = await vscode.workspace.fs.stat(uri);
-	return stat.type === vscode.FileType.Directory;
-}
-
-async function getFilenamesInDirectory(uri: vscode.Uri): Promise<vscode.Uri[]> {
-	if (!(await isDirectory(uri))) {
+function getFilenamesInDirectory(uri: string): string[] {
+	if (!(isDirectory(uri))) {
 		return [uri];
 	}
-    const files = await vscode.workspace.fs.readDirectory(uri);
-    const result: vscode.Uri[] = [];
+    const files: fs.Dirent[] = fs.readdirSync(uri, { withFileTypes: true });
+    const result: string[] = [];
 
-    for (const [name, type] of files) {
-        const fileUri = vscode.Uri.joinPath(uri, name);
-        if (type === vscode.FileType.File) {
+    for (const file of files) {
+        const fileUri = path.join(uri, file.name);
+        if (file.isFile()) {
             result.push(fileUri);
-        } else if (type === vscode.FileType.Directory) {
-            const subFiles = await getFilenamesInDirectory(fileUri);
+        } else if (file.isDirectory()) {
+            const subFiles = getFilenamesInDirectory(fileUri);
             result.push(...subFiles);
         }
     }
@@ -104,19 +84,29 @@ async function getFilenamesInDirectory(uri: vscode.Uri): Promise<vscode.Uri[]> {
     return result;
 }
 
-async function getContentsFromFiles(uri: vscode.Uri): Promise<FileContent[]> {
-	const stat = await vscode.workspace.fs.stat(uri);
-	if (stat.type === vscode.FileType.Directory) {
-		const files = await getFilenamesInDirectory(uri);
-		const fileContents = await Promise.all(files.map((file) => getContentsFromFiles(file)));
+function getContentsFromFiles(uri: string): FileContent[] {
+	const stat = fs.statSync(uri);
+	if (stat.isDirectory()) {
+		const files = getFilenamesInDirectory(uri);
+		if (files.length === 0) {
+			const message = `Directory ${uri} is empty.`;
+			vscode.window.showErrorMessage(message);
+			throw new Error('Empty directory');
+		}
+		if (files.length > maxNumberOfFiles) {
+			const message = `Directory ${uri} has ${files.length} files but the limit is ${maxNumberOfFiles}.`;
+			vscode.window.showErrorMessage(message);
+			throw new Error('Too many files');
+		}
+		const fileContents = files.map((file) => getContentsFromFiles(file));
 		return fileContents.flat();
 	} else {
-		return [await getContentsFromSingleFile(uri)];
+		return [getContentsFromSingleFile(uri)];
 	}
 }
 
-async function getContentsFromSingleFile(uri: vscode.Uri): Promise<FileContent> {
-	const contents = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
-	const fileName = path.relative(getRootPath(), uri.fsPath);
+function getContentsFromSingleFile(uri: string): FileContent {
+	const contents = fs.readFileSync(uri, 'utf8');
+	const fileName = path.relative(getRootPath(), uri);
 	return { fileName, contents };
 }
