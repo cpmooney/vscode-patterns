@@ -18,3 +18,7 @@ the power of AI.
 1. Use the Copilot prompt `@smart-scaffold` and include a prompt describing the desired new use case.
 2. Click the "Write to file" button.
 3. The new files will be added to appropriate directories in the directory you have currently open.
+
+## Compile
+
+1. `yarn make-prod`
