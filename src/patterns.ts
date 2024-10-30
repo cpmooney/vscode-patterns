@@ -8,7 +8,7 @@ export function getFileContentInfoForPattern(patternName: string): FileContent[]
 }
 
 function patternDirectoryLocation(): string {
-  const patternDirectory = process.env.CODE_PATTERN_DIRECTORY;
+  const patternDirectory = process.env.SMART_SCAFFOLD_PATTERN_DIRECTORY;
   if (patternDirectory) {
     if (isDirectory(patternDirectory)) {
       return patternDirectory;
