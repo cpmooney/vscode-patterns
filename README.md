@@ -7,7 +7,7 @@ the power of AI.
 
 - Install VS Code and set up Github Copilot
 - Install the "Code From Patterns" extension
-- Set the environment variable `CODE_PATTERN_DIRECTORY` to the directory containing your patterns
+- Set the environment variable `SMART_SCAFFOLD_PATTERN_DIRECTORY` to the directory containing your patterns
 
 ## Requirements
 
