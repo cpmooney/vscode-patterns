@@ -14,13 +14,13 @@ function patternDirectoryLocation(): string {
       return patternDirectory;
     } else {
       vscode.window.showErrorMessage(
-        `CODE_PATTERN_DIRECTORY is set to ${patternDirectory} but that is not a valid directory.`
+        `SMART_SCAFFOLD_PATTERN_DIRECTORY is set to ${patternDirectory} but that is not a valid directory.`
       );
       throw new Error("Invalid directory");
     }
   } else {
     vscode.window.showErrorMessage(
-      "The CODE_PATTERN_DIRECTORY environment variable is not set."
+      "The SMART_SCAFFOLD_PATTERN_DIRECTORY environment variable is not set."
     );
     throw new Error("Environment variable not set");
   }
