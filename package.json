@@ -10,12 +10,14 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./out/extension.js",
+  "main": "out/extension.js",
   "contributes": {
-    "commands": [{
-      "command": "smart-scaffold.in-context-menu",
-      "title": "Code from Patterns"
-    }],
+    "commands": [
+      {
+        "command": "smart-scaffold.in-context-menu",
+        "title": "Code from Patterns"
+      }
+    ],
     "chatParticipants": [
       {
         "name": "smart-scaffold",
@@ -40,21 +42,37 @@
   },
   "scripts": {
     "vscode:prepublish": "yarn run compile",
+    "check-types": "tsc --noEmit",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "clean": "rimraf out node_modules ./smart-scaffold-*.vsix",
+    "make-prod": "yarn run check-types && node esbuild.js --production && vsce package"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cpmooney/vscode-patterns.git"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "publisher": "MoonDawg",
   "devDependencies": {
-    "@types/vscode": "^1.94.0",
     "@types/mocha": "^10.0.8",
     "@types/node": "20.x",
+    "@types/vscode": "^1.94.0",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "eslint": "^9.11.1",
-    "typescript": "^5.6.2",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.11.1",
+    "rimraf": "^6.0.1",
+    "tsc": "^2.0.4",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "@vscode/vsce": "^3.2.1"
   }
 }
